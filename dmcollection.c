@@ -131,6 +131,7 @@ pathtype parse_path(const char * path, list * collections, collection ** coll, i
 	
 	if(!strstr(path+1,"/")) { // is a directory
 		*coll = find_collection(collections, path+1);
+		if(*coll==NULL) return PATH_BAD;
 		return PATH_DIR;
 	}
 	

@@ -47,8 +47,6 @@
 #define LOCKDIR(dir) pthread_mutex_lock(&dir->cmux);
 #define UNLOCKDIR(dir) pthread_mutex_unlock(&dir->cmux); 
 
-#define is_root(path) (!strcmp(path,"/"))
-#define is_dir(path) (strstr(path+1,"/")==NULL)
 #define DM_DIRPERM (S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 #define DM_FILEPERM (S_IFREG | S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH)
 
@@ -62,8 +60,7 @@ void api_free()
 {
 	if(auth_token) free(auth_token);
 	syslog(LOG_INFO, "Unmounting Dropmarkfs");
-	closelog();
-  
+	closelog();  
 }
 
 /* 
@@ -81,13 +78,18 @@ int authorize_user()
 	postdata_t postpar=post_init();
 	char * header = malloc(128);
 
+	tf = fopen("_api_token", "r");
+	if(!tf) {
+	        fprintf(stderr, "Please configure your API key\n");
+	        return 1;
+	}
+	if(tf) api_key = app_term_readline_from(tf);
+	fclose(tf);
+
 	printf("Email: "); mail = app_term_readline();
 	passwd = app_term_askpass("Password:");
 	mail[strlen(mail)-1] = 0;
 
-	tf = fopen("_api_token", "r");
-	if(tf) api_key = app_term_readline_from(tf);
-	fclose(tf);
 	snprintf(header, 128, "X-API-Key: %s", api_key);
 	set_auth_header(header);
 
@@ -294,7 +296,7 @@ int api_getattr(const char *path, struct stat *stbuf)
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
 	
-	type = parse_path(path, collections, &c, &f);	
+	type = parse_path(path, collections, &c, &f);
 	switch(type) {
 	        case PATH_ROOT:
 	                stbuf->st_nlink = 2 + list_size(collections);
@@ -316,9 +318,9 @@ int api_getattr(const char *path, struct stat *stbuf)
                 	stbuf->st_mtime = c->mtime;
                 	stbuf->st_atime = c->mtime;
                 	stbuf->st_nlink = 1;
-                	return 0;		                
-
-	        default: return -ENOENT;
+                	return 0;
+	        default:
+	                return -ENOENT;
 	}
 }
 
