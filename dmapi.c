@@ -28,6 +28,7 @@
 #include <libapp/list.h>
 #include <rfjson.h>
 #include <rfhttp.h>
+#include <rfutils.h>
 
 /* Building blocks for Dropmark API endpoints
    and return codes
@@ -37,10 +38,6 @@
 #define DM_DIRS     DM_ENDPOINT "collections"
 #define DM_FILES    DM_DIRS "/%s/items"
 
-//    CALLS
-#define API_ENDPOINT	"https://api.box.com/2.0/"
-#define API_UPLOAD      "https://upload.box.com/api/2.0/files/content"
-#define API_UPLOAD_VER  "https://upload.box.com/api/2.0/files/%s/content"
 //    UTILS
 #define BUFSIZE 1024
 
@@ -196,22 +193,17 @@ int api_createdir(const char * path)
 
 int api_create(const char * path)
 {
-  int res = 0;
-  //boxpath * bpath = boxpath_from_string(path);
-  //boxfile * aFile;
-/*
-  if(bpath->dir) {
-    aFile = boxfile_create(bpath->base);
-    LOCKDIR(bpath->dir);
-    list_append(bpath->dir->files,aFile);
-    UNLOCKDIR(bpath->dir);
-  } else {
-    syslog(LOG_WARNING, "UH oh... wrong path %s",path);
-    res = -ENOTDIR;
-  }
-  boxpath_free(bpath);
-*/  
-  return res;
+	collection * c;
+	item * f;
+        pathtype type = parse_path(path, collections, &c, &f);
+
+	if(c) {
+                f = create_item(c, path);
+                return 0;
+	}
+	
+	syslog(LOG_WARNING, "UH oh... wrong path %s",path);
+	return -ENOTDIR;
 }
 
 
@@ -515,23 +507,33 @@ int api_rename_v2(const char * from, const char * to)
 void api_upload(const char * path, const char * tmpfile)
 {
 	postdata_t buf = post_init();
-	char * res = NULL, * pr = NULL;
-	off_t fsize, oldsize = 0;
+	char * res = NULL/*, * pr = NULL*/;
+	//off_t fsize, oldsize = 0;
 	collection * c = NULL;
 	item * f;
-	int oldver;
+	//int oldver;
+	char url[BUFSIZE]="";
 	pathtype type;
+	jobj * new_item;
 	
-	/* this could give us PATH_BAD, but fill c */
 	type = parse_path(path, collections, &c, &f);
 	if(!c) {
 		post_free(buf);
 		syslog(LOG_ERR, "Can't upload file %s", path);
 		return;
 	}
-	//...
+	post_add(buf, "name", f->name);
+	post_addfile(buf, "content", tmpfile);
+	snprintf(url, BUFSIZE, DM_FILES, c->id);
+	res = http_postfile(url, buf);
+	new_item = jobj_parse(res);
+	//TODO: CHECK_ERR
+	f->id = jobj_getval(new_item, "id");
+	f->url = jobj_getval(new_item, "content");
+	f->size = filesize(tmpfile);
 	
 	post_free(buf);
+	jobj_free(new_item);
 /*
   boxpath * bpath = boxpath_from_string(path);
 

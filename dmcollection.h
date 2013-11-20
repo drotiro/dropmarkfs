@@ -55,6 +55,13 @@ list * load_collections(jobj * collections);
 void   init_collection(collection * c, jobj* items);
 
 /*
+ * Create a new object (collection/item)
+ * and add it to the parent list
+ */
+item *       create_item(collection * c, const char * name);
+collection * create_collection(list * c, const char * name);
+
+/*
  * Find a collection by name
  */
 collection * find_collection(list * c, const char * name);

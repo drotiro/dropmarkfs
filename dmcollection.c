@@ -69,6 +69,28 @@ char * dm_basename(const char * path)
 /*
  * Public functions
  */
+
+item *       create_item(collection * c, const char * n)
+{
+	item * f = item_new();
+	char * name = dm_basename(n);
+	time_t now = time(NULL);
+	
+	f->name = name;
+	f->ctime = now;
+	f->mtime = now;
+	
+	list_insert_sorted_comp(c->files, f, compare_name);
+	free(name);
+	
+	return f;
+}
+
+collection * create_collection(list * c, const char * name)
+{
+
+}
+
 list * load_collections(jobj * collections)
 {
 	list * res = list_new();

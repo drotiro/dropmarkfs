@@ -70,7 +70,7 @@ static int dm_truncate(const char *path, off_t size)
   }
  
   // download file locally, truncate and re-upload it
-  lpeer = strdup("/tmp/bpfXXXXXX");
+  lpeer = strdup("/tmp/dmfXXXXXX");
   fd = mkstemp(lpeer);
   if(fd!=-1) close(fd);
   res = api_open(path, lpeer);               
@@ -106,7 +106,7 @@ static int dm_open(const char *path, struct fuse_file_info *fi)
     int fd;
     char * lpeer = NULL;
     
-    lpeer = strdup("/tmp/bpfXXXXXX");
+    lpeer = strdup("/tmp/dmfXXXXXX");
     fd = mkstemp(lpeer);
     if(fd!=-1) close(fd);
     res = api_open(path, lpeer);
@@ -120,7 +120,7 @@ static int dm_create(const char * path, mode_t mode, struct fuse_file_info * fi)
     int fd;
     char * lpeer = NULL;
       
-    lpeer = strdup("/tmp/bUfXXXXXX");
+    lpeer = strdup("/tmp/dmUfXXXXXX");
     fd = mkstemp(lpeer);
         
     if (fd == -1){
@@ -130,8 +130,7 @@ static int dm_create(const char * path, mode_t mode, struct fuse_file_info * fi)
     close(fd);
 
     fi->fh = (unsigned long)lpeer;                  
-    api_create(path);
-    return 0;
+    return api_create(path);
 }
 
 static int dm_read(const char *path, char *buf, size_t size, off_t offset,
