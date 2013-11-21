@@ -212,7 +212,7 @@ jobj * get_collections( )
 	char * buf = NULL;
 	jobj * res = NULL;
 	
-	buf = http_fetch(DM_DIRS);
+	buf = http_fetch(DM_DIRS "?count=1000");
 	if(buf) {
 	        res = jobj_parse(buf);
 	        free(buf);
@@ -225,7 +225,7 @@ jobj * get_collection(const char * id )
 	char * buf = NULL;
 	jobj * res = NULL;
 	
-	buf = http_fetchf(DM_FILES, id);
+	buf = http_fetchf(DM_FILES "?count=1000", id);
 	if(buf) {
 	        res = jobj_parse(buf);
 	        free(buf);
