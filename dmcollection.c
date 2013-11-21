@@ -73,22 +73,28 @@ char * dm_basename(const char * path)
 item *       create_item(collection * c, const char * n)
 {
 	item * f = item_new();
-	char * name = dm_basename(n);
 	time_t now = time(NULL);
 	
-	f->name = name;
+	f->name = dm_basename(n);
 	f->ctime = now;
 	f->mtime = now;
 	
 	list_insert_sorted_comp(c->files, f, compare_name);
-	free(name);
 	
 	return f;
 }
 
-collection * create_collection(list * c, const char * name)
+collection * create_collection(list * c, const char * n)
 {
-
+	collection * nc = collection_new();
+	time_t now = time(NULL);
+	
+	nc->name = dm_basename(n);
+	nc->ctime = now;
+	nc->mtime = now;
+	list_insert_sorted_comp(c, nc, compare_name);
+	
+	return nc;
 }
 
 list * load_collections(jobj * collections)

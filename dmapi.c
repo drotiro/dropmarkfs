@@ -139,55 +139,27 @@ void api_getusage(long long * tot_sp, long long * used_sp)
 
 int api_createdir(const char * path)
 {
-	int res = 0;
-	//boxpath * bpath;
-	//boxdir *newdir;
-	//boxfile * aFile;
-	char * dirid = NULL, *buf = NULL;
 	jobj * folder = NULL;
-	char fields[BUFSIZE]="";
-/*
-	bpath = boxpath_from_string(path);
-	if(bpath->dir) {
-		snprintf(fields, BUFSIZE, POST_CREATEDIR,
-		        bpath->base, bpath->dir->id);
-
-		buf = http_post_fields(API_LS, fields);
-
-		if(buf) { 
-			folder = jobj_parse(buf); 
-			free(buf);
-		}
-		if(folder) {
-		        dirid = jobj_getval(folder, "id");
-        		free(folder);
-                }
-
-		if(!dirid) {
-			res = -EINVAL;
-			boxpath_free(bpath);
-			return res;
-		}
-
-		// add 1 entry to the hash table
-		newdir = boxdir_create();
-		newdir->id = dirid;
-		//xmlHashAddEntry(allDirs, path, newdir);
-		// upd parent
-		aFile = boxfile_create(bpath->base);
-		aFile->id = strdup(dirid);
-		LOCKDIR(bpath->dir);
-		list_append(bpath->dir->folders, aFile);
-		UNLOCKDIR(bpath->dir);    
-		// invalidate cached parent entry
-		cache_rm(bpath->dir->id);
-	} else {
-		syslog(LOG_WARNING, "UH oh... wrong path %s",path);
-		res = -EINVAL;
+	char * name, *res;
+	objtype type;
+	collection * c;
+	postdata_t postpar=post_init();
+        
+        name = path+1; //dm_basename(path);
+        c = create_collection(collections, name);
+        if(!c) {
+		syslog(LOG_WARNING, "Cannot create dir %s",path);
+		return -EINVAL;
 	}
-	boxpath_free(bpath);
-*/
-	return res;
+	post_add(postpar, "name", name);
+	res = http_post(DM_DIRS, postpar);
+	folder = jobj_parse(res);
+	if(!folder) return -EINVAL;
+	c->id = jobj_getval(folder, "id");
+	
+	post_free(postpar);
+	//free(name);
+	return 0;
 }
 
 
@@ -523,7 +495,7 @@ void api_upload(const char * path, const char * tmpfile)
 		return;
 	}
 	post_add(buf, "name", f->name);
-	post_addfile(buf, "content", tmpfile);
+	post_addfile(buf, "content", f->name, tmpfile);
 	snprintf(url, BUFSIZE, DM_FILES, c->id);
 	res = http_postfile(url, buf);
 	new_item = jobj_parse(res);
