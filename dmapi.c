@@ -98,7 +98,6 @@ int authorize_user(char * mail, char * key_file)
 	post_add(postpar, "password", passwd);
 	buf = http_post(DM_LOGIN, postpar);
 	
-	//printf("Response: %s\n", buf);
 	account = jobj_parse(buf);
 	if(account) {
 		char * id = jobj_getval(account, "id");
@@ -136,8 +135,8 @@ int authorize_user(char * mail, char * key_file)
 
 void api_getusage(long long * tot_sp, long long * used_sp)
 {
-  *tot_sp = tot_space;
-  *used_sp = used_space;
+	*tot_sp = tot_space;
+	*used_sp = used_space;
 }
 
 int api_createdir(const char * path)
@@ -329,26 +328,6 @@ int api_removedir(const char * path)
   return res;
 }
 
-/*
- * Internal func to call the delete api on a file id.
- * api_removefile will call it several times if
- * splitfiles is on and the file has parts
- */
-/*
-int do_removefile_id(const char * id)
-{
-	int res = 0;
-	long sc;
-	char url[BUFSIZE]="";
-	
-	snprintf(url, BUFSIZE, API_FILES, id);
-	sc = http_delete(url);
-	if(sc != 204) res = -ENOENT;
-	
-	return res;
-}
-*/
-
 int api_removefile(const char * path)
 {
 	int res = 0;
@@ -379,106 +358,13 @@ int api_removefile(const char * path)
 }
 
 /*
- * Move and rename funcs, new version
+ * Move and rename:
+ * not yet implemented because API calls are missing
  */
 
-//predeclaration
-int do_api_move_id(int is_dir, const char * id, const char * dest, int is_rename);
-/*
-int do_api_move(boxpath * bsrc, boxpath * bdst)
+int api_rename(const char * from, const char * to)
 {
 	int res = 0;
-	list_iter it;
-
-	LOCKDIR(bsrc->dir);
-	res = do_api_move_id(bsrc->is_dir, bsrc->file->id, bdst->dir->id, FALSE);
-	if(!res) {
-		boxfile * part;
-
-		boxpath_removefile(bsrc);
-		LOCKDIR(bdst->dir);
-		list_append((bsrc->is_dir ? bdst->dir->folders : bdst->dir->files),
-			bsrc->file);
-		UNLOCKDIR(bdst->dir);
-	}
-	UNLOCKDIR(bsrc->dir);
-	
-	return res;
-}
-
-int do_api_move_id(int is_dir, const char * id, const char * dest, int is_rename)
-{
-        char url[BUFSIZE], fields[BUFSIZE], * buf, * type;
-        int res = 0;
-        jobj * obj;
-        
-        if(is_dir) {
-                snprintf(url, BUFSIZE, API_LS "%s", id);
-        } else {
-                snprintf(url, BUFSIZE, API_FILES, id);
-        }
-        if(is_rename) {
-		snprintf(fields, BUFSIZE, POST_RENAME, dest);
-	} else {
-		snprintf(fields, BUFSIZE, POST_MOVE, dest);
-	}
-
-        buf = http_put_fields(url, fields);
-        obj = jobj_parse(buf);
-        type = jobj_getval(obj, "type");
-        if(strcmp(type, is_dir ? "folder" : "file")) res = -EINVAL;
-        
-        if(type) free(type);
-        free(buf);
-        jobj_free(obj);
-        return res;
-}
-
-int do_api_rename(boxpath * bsrc, boxpath * bdst)
-{
-	int res;
-	
-	LOCKDIR(bsrc->dir);
-	res = do_api_move_id(bsrc->is_dir, bsrc->file->id, bdst->base, TRUE);
-	if(!res) {
-		boxfile * part;
-		char * newname;
-		list_iter it;
-		int ind=1;
-
-		boxpath_renamefile(bsrc, bdst->base);
-	}
-	UNLOCKDIR(bsrc->dir);
-
-	return res;
-}
-*/
-
-int api_rename_v2(const char * from, const char * to)
-{
-	int res = 0;
-	/*
-	boxpath * bsrc = boxpath_from_string(from);
-	boxpath * bdst = boxpath_from_string(to);
-	if(!boxpath_getfile(bsrc)) return -EINVAL; 
-	boxpath_getfile(bdst);
-
-	if(bsrc->dir!=bdst->dir) {
-		res=do_api_move(bsrc, bdst);
-	}
-	if(!res && strcmp(bsrc->base, bdst->base)) {
-		res = do_api_rename(bsrc,bdst);
-	}
-	if(!res && bsrc->is_dir) {
-	    boxtree_movedir(from, to);
-	}
-
-	// invalidate cache entries
-	cache_rm(bsrc->dir->id);
-	if(bsrc->dir!=bdst->dir) cache_rm(bdst->dir->id);
-	boxpath_free(bsrc);
-	boxpath_free(bdst);
-	*/
 	return res;
 }
 
@@ -509,42 +395,11 @@ void api_upload(const char * path, const char * tmpfile)
 	f->id = jobj_getval(new_item, "id");
 	f->url = jobj_getval(new_item, "content");
 	f->size = filesize(tmpfile);
+	/* update used space */
+	used_space += filesize(tmpfile);
 	
 	post_free(buf);
 	jobj_free(new_item);
-/*
-  boxpath * bpath = boxpath_from_string(path);
-
-  if(bpath->dir) {
-    post_add(buf, "parent_id", bpath->dir->id);
-    fsize = filesize(tmpfile);
-    oldver = (boxpath_getfile(bpath) && bpath->file->size);
-    if(oldver) oldsize = bpath->file->size;
-    
-    if(fsize) {
-    	//normal upload
-    	post_addfile(buf, bpath->base, tmpfile);
-    	if(oldver) {
-    	        char url[BUFSIZE]="";
-    	        snprintf(url, BUFSIZE, API_UPLOAD_VER, bpath->file->id);
-    	        res = http_postfile(url, buf);
-        } else {
-                res = http_postfile(API_UPLOAD, buf);
-        }
-
-	set_filedata(bpath ,res, fsize);
-	free(res);
-    }
-
-    // update used space    
-    used_space = used_space - oldsize + fsize;
-    
-  } else {
-    syslog(LOG_ERR,"Couldn't upload file %s",bpath->base);
-  }
-  post_free(buf);
-  boxpath_free(bpath);
-  */
 }
 
 /*

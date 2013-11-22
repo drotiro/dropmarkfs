@@ -29,19 +29,19 @@
 
 static int dm_access(const char *path, int mask)
 {
-    return 0;
+	return 0;
 }
 
 
 static int dm_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi)
 {
-    return api_readdir(path,filler,buf);
+	return api_readdir(path,filler,buf);
 }
 
 static int dm_mkdir(const char *path, mode_t mode)
 {
-  return api_createdir(path);
+	return api_createdir(path);
 }
 
 static int dm_release(const char *path, struct fuse_file_info *fi)
@@ -208,7 +208,7 @@ static struct fuse_operations dm_oper = {
     .unlink	= api_removefile,
     .rmdir	= api_removedir,
     .release	= dm_release,
-//    .rename	= api_rename_v2,
+//    .rename	= api_rename,
     .truncate	= dm_truncate,
     .utimens	= dm_utimens,
     .open	= dm_open,
