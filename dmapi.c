@@ -66,26 +66,30 @@ void api_free()
  * the API call returns also account info (i.e. storage quota)
  * that we read and use
  */
-int authorize_user()
+int authorize_user(char * mail, char * key_file)
 {
 	int res = 0;
-	char * buf = NULL, * mail = NULL, * passwd = NULL;
+	char * buf = NULL, * passwd = NULL;
 	jobj * account, * usage;
 	FILE * tf;
 	postdata_t postpar=post_init();
 	char * header = malloc(128);
 
-	tf = fopen("_api_token", "r");
+	tf = fopen(key_file, "r");
 	if(!tf) {
-	        fprintf(stderr, "Please configure your API key\n");
+	        fprintf(stderr, "Can't open key file %s\n", key_file);
 	        return 1;
 	}
 	if(tf) api_key = app_term_readline_from(tf);
 	fclose(tf);
 
-	printf("Email: "); mail = app_term_readline();
+	if(!mail) {
+	        printf("Email: "); 
+	        mail = app_term_readline();
+	        mail[strlen(mail)-1] = 0;
+
+        }
 	passwd = app_term_askpass("Password:");
-	mail[strlen(mail)-1] = 0;
 
 	snprintf(header, 128, "X-API-Key: %s", api_key);
 	set_auth_header(header);
@@ -126,7 +130,6 @@ int authorize_user()
 
 	post_free(postpar);
 	if(buf)    free(buf);
-	if(mail)   free(mail);
 	if(passwd)   free(passwd);
 	return res;
 }
@@ -145,10 +148,14 @@ int api_createdir(const char * path)
 	collection * c;
 	postdata_t postpar=post_init();
         
-        name = path+1; //dm_basename(path);
+        name = path+1;
+        if(strchr(name, '/')) {
+                syslog(LOG_INFO, "Invalid path (nested dirs not allowed): %s", path);
+                return -EINVAL;
+        }
         c = create_collection(collections, name);
         if(!c) {
-		syslog(LOG_WARNING, "Cannot create dir %s",path);
+		syslog(LOG_WARNING, "Cannot create dir %s", path);
 		return -EINVAL;
 	}
 	post_add(postpar, "name", name);
@@ -158,7 +165,6 @@ int api_createdir(const char * path)
 	c->id = jobj_getval(folder, "id");
 	
 	post_free(postpar);
-	//free(name);
 	return 0;
 }
 
@@ -544,19 +550,15 @@ void api_upload(const char * path, const char * tmpfile)
 /*
  * Login to Dropmark and fetch collections info
  */
-int api_init(int* argc, char*** argv) {
+int api_init(dm_opts * o) {
 
 	int res = 0;
+	
 
-	/* parse command line arguments */
-	//if (parse_options (argc, argv, &options))
-	//	return 1;  
-  
 	openlog("dropmarkfs", LOG_PID, LOG_USER);
-	//cache_init(options.cache_dir, options.expire_time);
 
        	//set_conn_reuse(TRUE);
-	res = authorize_user();
+	res = authorize_user(o->email, o->keyfile);
         
   	if(!res) {  	        
   		jobj * o;

@@ -221,14 +221,50 @@ static struct fuse_operations dm_oper = {
 };
 
 
+/*
+ * Command line processing is done with fuse_opt_parse
+ * @see http://sourceforge.net/apps/mediawiki/fuse/index.php?title=Option_parsing
+ * for more information
+ */
+
+#define DMFS_OPT(t, p, v) { t, offsetof(dm_opts, p), v }
+#define KEY_HELP 100
+
+static struct fuse_opt dmfs_opts[] = {
+	DMFS_OPT("-l %s",        email, 0),
+	DMFS_OPT("--login %s",   email, 0),
+	DMFS_OPT("-k %s",        keyfile, 0),
+	DMFS_OPT("--keyfile %s", keyfile, 0),
+
+	FUSE_OPT_KEY("-h",             KEY_HELP),
+	FUSE_OPT_KEY("--help",         KEY_HELP),
+	FUSE_OPT_END
+};
+
+
+int show_help(void *data, const char *arg, int key, struct fuse_args *outargs)
+{
+	if(key != KEY_HELP) return 1;
+	fprintf(stderr, "Usage: %s [options] <mountpoint>\n\n", outargs->argv[0]);
+	fprintf(stderr, "Supported options:\n"
+		"-l|--login <your email> (optional)\n"
+		"-k|--keyfile <file with API key> (mandatory)\n\n");
+	return 1;
+}
 
 int main(int argc, char *argv[])
 {
-    int fuse_res;
+	int fuse_res;
+	dm_opts opts;
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    if(api_init(&argc, &argv)) return 1;
-    fuse_res = fuse_main(argc, argv, &dm_oper, NULL);
-    api_free();
-     
-    return fuse_res;   
+	memset(&opts, 0, sizeof(opts));
+	fuse_opt_parse(&args, &opts, dmfs_opts, show_help);
+	if(!opts.keyfile) return 1;
+
+	if(api_init(&opts)) return 1;
+	fuse_res = fuse_main(args.argc, args.argv, &dm_oper, NULL);
+	api_free();
+
+	return fuse_res;   
 }

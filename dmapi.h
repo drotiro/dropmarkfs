@@ -8,8 +8,16 @@
 
 #include <fuse.h>
 
+/*
+ * A structure for command line options
+ */ 
+typedef struct {
+	char * email;
+	char * keyfile;
+} dm_opts;
+
 void 	api_free(); 
-int 	api_init(int* argc, char*** argv);
+int 	api_init(dm_opts * opts);
 
 int 	api_readdir(const char *, fuse_fill_dir_t, void * buf);
 void	api_getusage(long long *, long long * );
