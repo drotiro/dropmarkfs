@@ -1,3 +1,5 @@
 *.o
 dmfs
 _*
+libapp
+rest-friend

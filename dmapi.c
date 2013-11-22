@@ -30,15 +30,13 @@
 #include <rfhttp.h>
 #include <rfutils.h>
 
-/* Building blocks for Dropmark API endpoints
-   and return codes
-*/
+/* Building blocks for Dropmark API endpoints */
 #define DM_ENDPOINT "https://api.dropmark.com/v1/"
 #define DM_LOGIN    DM_ENDPOINT "auth"
 #define DM_DIRS     DM_ENDPOINT "collections"
 #define DM_FILES    DM_DIRS "/%s/items"
 
-//    UTILS
+/* Utils */
 #define BUFSIZE 1024
 
 #define LOCKDIR(dir) pthread_mutex_lock(&dir->cmux);
@@ -47,11 +45,10 @@
 #define DM_DIRPERM (S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 #define DM_FILEPERM (S_IFREG | S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH)
 
-/* globals, written during initialization */
+/* Globals, initialized during initialization */
 char *auth_token = NULL, *api_key = NULL;
 long long tot_space, used_space;
 list * collections = NULL;
-//struct box_options_t options;
 
 void api_free()
 {
@@ -142,7 +139,8 @@ void api_getusage(long long * tot_sp, long long * used_sp)
 int api_createdir(const char * path)
 {
 	jobj * folder = NULL;
-	char * name, *res;
+	const char * name;
+	char * res;
 	objtype type;
 	collection * c;
 	postdata_t postpar=post_init();
@@ -174,6 +172,13 @@ int api_create(const char * path)
 	item * f;
         pathtype type = parse_path(path, collections, &c, &f);
 
+        /* Dropmark allows duplicate file name in a collection,
+         * but this is odd for a filesystem, so we don't.
+         */
+        if(type==PATH_FILE) {
+                syslog(LOG_WARNING, "File already exists: %s", path);
+                return -EINVAL;
+        }
 	if(c) {
                 f = create_item(c, path);
                 return 0;
@@ -296,35 +301,6 @@ int api_getattr(const char *path, struct stat *stbuf)
 int api_removedir(const char * path)
 {
   int res = 0;
-  char url[BUFSIZE]="";
-  long sc;
-  /*boxpath * bpath = boxpath_from_string(path);
-
-  /* check that is a dir */
-  /*
-  if(!boxpath_getfile(bpath)) return -EINVAL;  
-  if(!bpath->dir && !bpath->is_dir) return -ENOENT;
-
-  snprintf(url, BUFSIZE, API_LS "%s", bpath->file->id);
-  sc = http_delete(url);
-  
-  if(sc != 204) {
-    res = -EPERM;
-  }
-
-  if(!res) {
-    //remove it from parent's subdirs...
-    LOCKDIR(bpath->dir);
-    boxpath_removefile(bpath);
-    UNLOCKDIR(bpath->dir);
-    //...and from dir list
-//    xmlHashRemoveEntry(allDirs, path, NULL);
-    // invalidate parent cache entry
-    cache_rm(bpath->dir->id);
-  }
-  
-  boxpath_free(bpath);  
-  */
   return res;
 }
 
@@ -381,6 +357,7 @@ void api_upload(const char * path, const char * tmpfile)
 	jobj * new_item;
 	
 	type = parse_path(path, collections, &c, &f);
+	
 	if(!c) {
 		post_free(buf);
 		syslog(LOG_ERR, "Can't upload file %s", path);
@@ -412,8 +389,8 @@ int api_init(dm_opts * o) {
 
 	openlog("dropmarkfs", LOG_PID, LOG_USER);
 
-       	//set_conn_reuse(TRUE);
 	res = authorize_user(o->email, o->keyfile);
+       	set_conn_reuse(TRUE);
         
   	if(!res) {  	        
   		jobj * o;
@@ -437,6 +414,6 @@ int api_init(dm_opts * o) {
 		} else res = 1;     
 	}
 
-	//set_conn_reuse(FALSE);
+	set_conn_reuse(FALSE);
 	return res;
 }
