@@ -6,12 +6,18 @@ LIBS = $(shell pkg-config ${PKGS} --libs)
 OBJS = dmfs.o dmapi.o dmcollection.o
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
-DEPS = drotiro/libapp drotiro/rest-friend
+DEPS = libapp rest-friend
+STATIC_LIBS = -L./libapp/libapp -L./rest-friend
 
 # Targets
 dmfs: check_pkg $(OBJS) 
 	@echo "Building  $@"
 	$(CC) $(FLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+static: check_pkg deps $(OBJS)
+	@echo "Building  dmfs"
+	$(CC) $(FLAGS) $(LDFLAGS) -o dmfs $(OBJS) $(LIBS) $(STATIC_LIBS)
+                
 
 .c.o:
 	@echo Compiling $<
@@ -24,7 +30,7 @@ install: dmfs
 	install -s dmfs $(BINDIR)
 
 deps:
-	@$(foreach i,$(DEPS), git clone https://github.com/$i && make -C `basename $i` install; )
+	@$(foreach i,$(DEPS), (test -d `basename $i` || git clone https://github.com/drotiro/$i) && make -C `basename $i`; )
 
 # Check required programs
 check_pkg:

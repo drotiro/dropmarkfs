@@ -13,7 +13,11 @@ You need an API key to run this software.
 * Run `make` and optionally `sudo make install` to get the headers and the library
 installed under `PREFIX`. 
 
-Alternatively, you can run `sudo make deps` to clone, compile and install the dependencies.
+If you prefer a static build or don't want to install the dependencies system-wide,
+you can run `make static` to:
+ * download (`git clone`) libapp and rest-friend inside the source tree
+ * compile them
+ * link against those local libs
 
 
 ## Running 
