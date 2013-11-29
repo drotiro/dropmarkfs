@@ -48,7 +48,7 @@ typedef struct {
 typedef enum { PATH_ROOT, PATH_DIR, PATH_FILE, PATH_BAD } pathtype;
 
 /*
- * Initialize the list of collection from
+ * Initialize the list of collections from
  * their json representation
  */
 list * load_collections(jobj * collections);
@@ -62,14 +62,16 @@ item *       create_item(collection * c, const char * name);
 collection * create_collection(list * c, const char * name);
 
 /*
- * Find a collection by name
+ * Remove an object from its container list
  */
-collection * find_collection(list * c, const char * name);
+void delete_collection(list * c, collection * obj);
+void delete_item(collection * c, item * obj);
 
 /*
- * Fine a file by name
+ * Find an object by name
  */
-item * find_item(collection * c, const char * name);
+collection * find_collection(list * c, const char * name);
+item *       find_item(collection * c, const char * name);
 
 /*
  * Analyze a path to see if it's a directory, file, etc
@@ -81,6 +83,4 @@ item * find_item(collection * c, const char * name);
 pathtype parse_path(const char * path, list * collections, collection ** coll, item ** f);
 
 #endif
-// DMCOLLECTION_H
-
-
+/* DMCOLLECTION_H */

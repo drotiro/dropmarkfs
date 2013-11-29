@@ -300,37 +300,45 @@ int api_getattr(const char *path, struct stat *stbuf)
 
 int api_removedir(const char * path)
 {
-  int res = 0;
-  return res;
+	collection * c;
+	item * f;
+	pathtype type = parse_path(path, collections, &c, &f);
+	char url[BUFSIZE]="";
+	int sc;
+	
+	if(!c) return -EINVAL;
+	snprintf(url, BUFSIZE, DM_DIRS "/%s", c->id);
+	sc = http_delete(url);
+
+	/* A 200 HTTP status code means that deletion was succesful */
+	if(sc==200) {
+	        delete_collection(collections, c);
+	        return 0;
+	}
+	return -EPERM;
 }
 
 int api_removefile(const char * path)
 {
-	int res = 0;
-	/*
-	boxpath * bpath = boxpath_from_string(path);
-
-	if(!bpath->dir) res = -ENOENT;
-	else {
-		//remove it from box.net
-		boxpath_getfile(bpath);
-		res = do_removefile_id(bpath->file->id);
-
-		if(res==0) {
-        		used_space -= bpath->file->size;
-
-			//remove it from the list
-			LOCKDIR(bpath->dir);
-			boxpath_removefile(bpath);
-			UNLOCKDIR(bpath->dir);
-			//invalidate cache entry
-			cache_rm(bpath->dir->id);
-		}
-	}
+	collection * c;
+	item * f;
+	pathtype type = parse_path(path, collections, &c, &f);
+	char url[BUFSIZE]="";
+	int sc;
 	
-	boxpath_free(bpath);
-	*/
-	return res;
+	if(type != PATH_FILE) return -ENOENT;
+	snprintf(url, BUFSIZE, DM_ENDPOINT "items/%s", f->id);
+	sc = http_delete(url);
+
+	/* A 200 HTTP status code means that deletion was succesful */
+	if(sc==200) {
+	        used_space -= f->size;
+	        LOCKDIR(c);
+	        delete_item(c, f);
+	        UNLOCKDIR(c);
+	        return 0;
+	}
+	return -EPERM;
 }
 
 /*

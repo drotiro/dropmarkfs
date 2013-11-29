@@ -137,6 +137,16 @@ void   init_collection(collection * c, jobj* items)
 	}        
 }
 
+void delete_collection(list * c, collection * obj)
+{
+	list_delete_item(c, obj);
+}
+
+void delete_item(collection * c, item * obj)
+{
+	list_delete_item(c->files, obj);
+}
+
 collection * find_collection(list * c, const char * name)
 {
 	return (collection*)find_in_list(c, name);
