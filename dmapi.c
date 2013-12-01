@@ -40,7 +40,9 @@
 #define BUFSIZE 1024
 
 #define LOCKDIR(dir) pthread_mutex_lock(&dir->cmux);
-#define UNLOCKDIR(dir) pthread_mutex_unlock(&dir->cmux); 
+#define UNLOCKDIR(dir) pthread_mutex_unlock(&dir->cmux);
+#define LOCKROOT pthread_mutex_lock(&rmux);
+#define UNLOCKROOT pthread_mutex_unlock(&rmux);
 
 #define DM_DIRPERM (S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 #define DM_FILEPERM (S_IFREG | S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH)
@@ -49,6 +51,7 @@
 char *auth_token = NULL, *api_key = NULL;
 long long tot_space, used_space;
 list * collections = NULL;
+pthread_mutex_t rmux;
 
 void api_free()
 {
@@ -150,7 +153,11 @@ int api_createdir(const char * path)
                 syslog(LOG_INFO, "Invalid path (nested dirs not allowed): %s", path);
                 return -EINVAL;
         }
+        
+        LOCKROOT
         c = create_collection(collections, name);
+        UNLOCKROOT
+        
         if(!c) {
 		syslog(LOG_WARNING, "Cannot create dir %s", path);
 		return -EINVAL;
@@ -312,7 +319,9 @@ int api_removedir(const char * path)
 
 	/* A 200 HTTP status code means that deletion was succesful */
 	if(sc==200) {
+	        LOCKROOT
 	        delete_collection(collections, c);
+	        UNLOCKROOT
 	        return 0;
 	}
 	return -EPERM;
@@ -394,8 +403,8 @@ int api_init(dm_opts * o) {
 
 	int res = 0;
 	
-
 	openlog("dropmarkfs", LOG_PID, LOG_USER);
+	pthread_mutex_init(&rmux, NULL);
 
 	res = authorize_user(o->email, o->keyfile);
        	set_conn_reuse(TRUE);
