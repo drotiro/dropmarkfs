@@ -1,4 +1,3 @@
-
 # Variables
 PKGS = fuse libapp rest-friend
 FLAGS ?= $(shell pkg-config ${PKGS} --cflags)
@@ -30,9 +29,8 @@ install: dmfs
 	install -s dmfs $(BINDIR)
 
 deps:
-	@$(foreach i,$(DEPS), if [ -d `basename $i` ]; then git pull origin master; \
-		else  git clone https://github.com/$i; fi; \
-		make -C `basename $i`; )
+	@$(foreach i,$(DEPS), ((test -d `basename $i` && (cd `basename $i`; git pull origin master; cd ..)) \
+		|| git clone https://github.com/$i) && make -C `basename $i`; )
 
 # Check required programs
 check_pkg:
