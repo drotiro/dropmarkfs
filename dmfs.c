@@ -249,7 +249,7 @@ int show_help(void *data, const char *arg, int key, struct fuse_args *outargs)
 	fprintf(stderr, "Supported options:\n"
 		"-l|--login <your email> (optional)\n"
 		"-k|--keyfile <file with API key> (mandatory)\n\n");
-	return 1;
+	exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -259,8 +259,11 @@ int main(int argc, char *argv[])
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 	memset(&opts, 0, sizeof(opts));
-	fuse_opt_parse(&args, &opts, dmfs_opts, show_help);
-	if(!opts.keyfile) return 1;
+	fuse_res = fuse_opt_parse(&args, &opts, dmfs_opts, show_help);
+	if(fuse_res || !opts.keyfile) {
+		fprintf(stderr, "Invalid arguments. Run with '-h' to show usage.\n");
+		return 1;
+	}
 
 	if(api_init(&opts)) return 1;
 	fuse_res = fuse_main(args.argc, args.argv, &dm_oper, NULL);
