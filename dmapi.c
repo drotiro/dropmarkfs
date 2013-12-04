@@ -364,36 +364,46 @@ int api_rename(const char * from, const char * to)
 void api_upload(const char * path, const char * tmpfile)
 {
 	postdata_t buf = post_init();
-	char * res = NULL/*, * pr = NULL*/;
-	//off_t fsize, oldsize = 0;
+	char * res = NULL;
 	collection * c = NULL;
 	item * f;
-	//int oldver;
 	char url[BUFSIZE]="";
 	pathtype type;
 	jobj * new_item;
 	
 	type = parse_path(path, collections, &c, &f);
-	
 	if(!c) {
 		post_free(buf);
 		syslog(LOG_ERR, "Can't upload file %s", path);
 		return;
 	}
+	
 	post_add(buf, "name", f->name);
 	post_addfile(buf, "content", f->name, tmpfile);
 	snprintf(url, BUFSIZE, DM_FILES, c->id);
 	res = http_postfile(url, buf);
 	new_item = jobj_parse(res);
-	//TODO: CHECK_ERR
-	f->id = jobj_getval(new_item, "id");
-	f->url = jobj_getval(new_item, "content");
-	f->size = filesize(tmpfile);
-	/* update used space */
-	used_space += filesize(tmpfile);
+        post_free(buf);
+	free(res);
+
+	if(!new_item) {
+	        syslog(LOG_WARNING, "Unable to parse server response during file upload (%s)", path);
+	        return;
+	}
+	res = jobj_getval(new_item, "message");
+	if(res) {
+	        syslog(LOG_WARNING, "Server responded: %s", res);
+	        jobj_free(new_item);
+	        free(res);
+	        return;
+	}
 	
-	post_free(buf);
-	jobj_free(new_item);
+       	f->id = jobj_getval(new_item, "id");
+       	f->url = jobj_getval(new_item, "content");
+       	f->size = filesize(tmpfile);
+       	/* update used space */
+       	used_space += filesize(tmpfile);
+        jobj_free(new_item);
 }
 
 /*
