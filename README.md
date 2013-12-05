@@ -26,6 +26,7 @@ Run `dmfs` providing at least the key file and the mount point, like the followi
 
 `dmfs -l youremail@domain.com -k file_with_api_key /mountpoint`
 
+To see a complete list of options run `dmfs -h`.
 
 ## Copyright and license
 

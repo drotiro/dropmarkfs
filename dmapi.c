@@ -416,6 +416,7 @@ int api_init(dm_opts * o) {
 	openlog("dropmarkfs", LOG_PID, LOG_USER);
 	pthread_mutex_init(&rmux, NULL);
 
+	use_original_names(o->orig_names);
 	res = authorize_user(o->email, o->keyfile);
        	set_conn_reuse(TRUE);
         
