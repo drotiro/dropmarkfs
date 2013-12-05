@@ -68,7 +68,7 @@ void api_free()
  */
 int authorize_user(char * mail, char * key_file)
 {
-	int res = 0;
+	int res = 0, kl;
 	char * buf = NULL, * passwd = NULL;
 	jobj * account, * usage;
 	FILE * tf;
@@ -82,6 +82,11 @@ int authorize_user(char * mail, char * key_file)
 	}
 	if(tf) api_key = app_term_readline_from(tf);
 	fclose(tf);
+	if(api_key) {
+	        kl = strlen(api_key);
+	        if(api_key[kl-1] == '\r' || api_key[kl-1] == '\n')
+	                api_key[kl-1] = 0;
+	}
 
 	if(!mail) {
 	        printf("Email: "); 
