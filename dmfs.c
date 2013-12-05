@@ -235,6 +235,8 @@ static struct fuse_opt dmfs_opts[] = {
 	DMFS_OPT("--login %s",   email, 0),
 	DMFS_OPT("-k %s",        keyfile, 0),
 	DMFS_OPT("--keyfile %s", keyfile, 0),
+	DMFS_OPT("--orig-names",    orig_names, TRUE),
+	DMFS_OPT("--no-orig-names", orig_names, FALSE),
 
 	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
@@ -247,9 +249,12 @@ int show_help(void *data, const char *arg, int key, struct fuse_args *outargs)
 	if(key != KEY_HELP) return 1;
 	fprintf(stderr, "Usage: %s [options] <mountpoint>\n\n", outargs->argv[0]);
 	fprintf(stderr, "Supported options:\n"
-		"-l|--login <your email> (optional)\n"
-		"-k|--keyfile <file with API key> (mandatory)\n\n");
-	return 1;
+		"-l|--login   <email address>     (optional)\n"
+		"-k|--keyfile <file with API key> (mandatory)\n"
+		"--[no]-orig-names                (optional) whether to show the original (uploaded)\n"
+		"\tfile names instead of the ones you see on the web interface.\n"
+		"\tUseful if you drop files from web and don't see the extension.\n\n");
+	exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -259,8 +264,11 @@ int main(int argc, char *argv[])
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 	memset(&opts, 0, sizeof(opts));
-	fuse_opt_parse(&args, &opts, dmfs_opts, show_help);
-	if(!opts.keyfile) return 1;
+	fuse_res = fuse_opt_parse(&args, &opts, dmfs_opts, show_help);
+	if(fuse_res || !opts.keyfile) {
+		fprintf(stderr, "Invalid arguments. Run with '-h' to show usage.\n");
+		return 1;
+	}
 
 	if(api_init(&opts)) return 1;
 	fuse_res = fuse_main(args.argc, args.argv, &dm_oper, NULL);

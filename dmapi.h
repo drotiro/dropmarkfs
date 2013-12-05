@@ -14,6 +14,7 @@
 typedef struct {
 	char * email;
 	char * keyfile;
+	int    orig_names;
 } dm_opts;
 
 void 	api_free(); 

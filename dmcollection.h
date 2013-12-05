@@ -47,6 +47,9 @@ typedef struct {
 
 typedef enum { PATH_ROOT, PATH_DIR, PATH_FILE, PATH_BAD } pathtype;
 
+/* Option setting */
+void use_original_names(int orig);
+
 /*
  * Initialize the list of collections from
  * their json representation

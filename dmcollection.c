@@ -6,8 +6,19 @@
 #include <rfutils.h>
 
 /*
+ * Settings
+ */
+static int orig_names;
+
+/*
  * Internal and helper functions
  */
+
+/* set file name behaviour */
+void use_original_names(int orig)
+{
+	orig_names = orig;
+}
 
 // create and initialize a new collection
 collection * collection_new()
@@ -59,7 +70,10 @@ dm_base * find_in_list(list/*<dm_base>*/ * c, const char * name)
  */
 char * dm_basename(const char * path)
 {
-	char * last_slash = strrchr(path, '/');
+	char * last_slash;
+	
+	if(!path) return NULL;
+	last_slash = strrchr(path, '/');
 	
 	if(!last_slash) return strdup(path);
 	return strdup(last_slash+1);	
@@ -127,10 +141,9 @@ void   init_collection(collection * c, jobj* items)
 		file = (jobj*)list_iter_getval(it);
 		ai = item_new();
 		ai->id = jobj_getval(file, "id");
-		//ai->name = jobj_getval(file, "name");
-		ai->size = jobj_getlong(file, "size");
 		ai->url = jobj_getval(file, "content");
-		ai->name = dm_basename(ai->url);
+		ai->name = orig_names ? dm_basename(ai->url) : jobj_getval(file, "name");
+		ai->size = jobj_getlong(file, "size");
 		ai->ctime = jobj_gettime(file, "created_at");
 		ai->mtime = jobj_gettime(file, "updated_at");
 		list_insert_sorted_comp(c->files, ai, compare_name);
