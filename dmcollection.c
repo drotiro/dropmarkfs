@@ -189,14 +189,14 @@ pathtype parse_path(const char * path, list * collections, collection ** coll, i
 	dir = dirname(strdup(path));
 	base = dm_basename(path);
 	*coll = find_collection(collections, dir+1);
-	free(dir);
+	/* dont't free(dir); */
 	
 	if(*coll==NULL)	{
 		free(base);
 		return PATH_BAD;
 	}
 	*f = find_item(*coll, base);
-	free(base);
+	if(base) free(base);
 	if(*f==NULL) return PATH_BAD;
 	// it's a file
 	return PATH_FILE;
