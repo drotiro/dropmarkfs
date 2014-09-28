@@ -195,6 +195,26 @@ static int dm_chown(const char * path, uid_t owner, gid_t group)
 	return 0;
 }
 
+/* Define xattr operations as no-ops */
+int dm_setxattr (const char * a, const char * b, const char * c, size_t d, int e)
+{
+	return 0;
+}
+int dm_getxattr(const char * a, const char * b, char * c, size_t d)
+{
+	return 0;
+}
+
+int dm_listxattr(const char * a, char * b, size_t c)
+{
+	return 0;
+}
+
+int dm_removexattr(const char * a, const char * b)
+{
+	return 0;
+}
+
 /*
  * Fuse operations for Dropmarkfs.
  * Most dm_* functions just wrap their corresponding 'api_'
@@ -217,7 +237,11 @@ static struct fuse_operations dm_oper = {
     .write	= dm_write,
     .statfs	= dm_statfs,
     .chmod	= dm_chmod,
-    .chown	= dm_chown
+    .chown	= dm_chown,
+    .setxattr   = dm_setxattr,
+    .getxattr   = dm_getxattr,
+    .listxattr  = dm_listxattr,
+    .removexattr= dm_removexattr
 };
 
 
