@@ -56,7 +56,7 @@ pthread_mutex_t rmux;
 void api_free()
 {
 	if(auth_token) free(auth_token);
-	http_threads_cleanup();
+//	http_threads_cleanup();
 	syslog(LOG_INFO, "Unmounting Dropmarkfs");
 	closelog();
 }
@@ -420,7 +420,7 @@ int api_init(dm_opts * o) {
 	int res = 0;
 	
 	openlog("dropmarkfs", LOG_PID, LOG_USER);
-	http_threads_init();
+//	http_threads_init();
 	pthread_mutex_init(&rmux, NULL);
 
 	use_original_names(o->orig_names);
