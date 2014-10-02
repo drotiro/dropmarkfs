@@ -230,12 +230,19 @@ jobj * get_collection(const char * id )
 
 int api_open(const char * path, const char * pfile)
 {
+	int res;
 	collection * c;
 	item * f;
         pathtype type = parse_path(path, collections, &c, &f);
 
         if(type!=PATH_FILE) return -ENOENT;
-        return http_fetch_file(f->url, pfile, FALSE);
+
+        /* disable auth for public url, otherwise the server complains */
+        set_auth_info(NULL);
+        res = http_fetch_file(f->url, pfile, FALSE);
+        set_auth_info(auth_token);
+
+        return res;
 }
 
 int api_readdir(const char * path, fuse_fill_dir_t filler, void * buf)
